@@ -196,6 +196,8 @@ public:
   string miningNotify1_;
   string miningNotify2_;
   string miningNotify2Clean_;  // clean flag always true
+  string miningNotify2Nano_;
+  string miningNotify2NanoClean_;
 
 public:
   StratumJobEx(StratumJob *sjob, bool isClean);
@@ -206,12 +208,14 @@ public:
 
   void generateBlockHeader(CBlockHeader *header,
                            std::vector<char> *coinbaseBin,
-                           const uint32_t extraNonce1,
-                           const string &extraNonce2Hex,
-                           const vector<uint256> &merkleBranch,
+                           const int32_t nVersion,
                            const uint256 &hashPrevBlock,
-                           const uint32_t nBits, const int32_t nVersion,
-                           const uint32_t nTime, const uint32_t nonce);
+                           const uint256 &hashMerkleRoot,
+                           const uint256 &hashReserved,
+                           const uint32_t nTime,
+                           const uint32_t nBits,
+                           const uint256& nonce,
+                           const std::vector<unsigned char> &nSolution);
 };
 
 
@@ -276,9 +280,9 @@ public:
   static void eventCallback(struct bufferevent *, short, void *connection);
 
   int checkShare(const Share &share,
-                 const uint32 extraNonce1, const string &extraNonce2Hex,
-                 const uint32_t nTime, const uint32_t nonce,
-                 const uint256 &jobTarget, const string &workFullName);
+                 const uint32 extraNonce1, const std::vector<unsigned char> &nSolution,
+                 const uint32_t nTime, const uint256& nonce,
+                 uint256 &jobTarget, const string &workFullName);
   void sendShare2Kafka      (const uint8_t *data, size_t len);
   void sendSolvedShare2Kafka(const FoundBlock *foundBlock,
                              const std::vector<char> &coinbaseBin);

@@ -144,4 +144,13 @@ bool TimingResistantEqual(const T& a, const T& b)
  */
 bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out);
 
+/* miner will reverse the data what recieve from server and then use to compute header hash.
+ * nano-pool reverse these before send */
+
+//char* reverseOf2Hex(string& miningNotify);
+
+void reverseStr(std::string& str);
+void reverseU32(uint32_t& n);
+void reversePrevExtra(std::string& prev);
+
 #endif // BITCOIN_UTILSTRENCODINGS_H

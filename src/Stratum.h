@@ -64,6 +64,18 @@ inline string filterWorkerName(const char *workerName) {
   return filterWorkerName(std::string(workerName));
 }
 
+struct EquihashSolution
+{
+    uint256 nonce;
+  std::string time;
+  size_t nonce1size;
+  std::vector<unsigned char> nsolution;
+
+    EquihashSolution(uint256 n, std::vector<unsigned char> s, std::string t, size_t n1s)
+    : nonce{ n }, nonce1size{ n1s } { nsolution = s; time = t; }
+
+    std::string toString() const { return nonce.GetHex(); }
+};
 ////////////////////////////////// FoundBlock //////////////////////////////////
 class FoundBlock {
 public:
@@ -71,11 +83,11 @@ public:
   int64_t  workerId_;  // found by who
   int32_t  userId_;
   int32_t  height_;
-  uint8_t  header80_[80];
+  uint8_t  header140_[140];
   char     workerFullName_[40];  // <UserName>.<WorkerName>
 
   FoundBlock(): jobId_(0), workerId_(0), userId_(0), height_(0) {
-    memset(header80_,       0, sizeof(header80_));
+    memset(header140_,       0, sizeof(header140_));
     memset(workerFullName_, 0, sizeof(workerFullName_));
   }
 };
@@ -258,6 +270,8 @@ public:
   string   witnessCommitment_;
 
   uint256 networkTarget_;
+  uint256 hashMerkleRoot_;
+  uint256 hashReserved_;
 
   // namecoin merged mining
   uint32_t nmcAuxBits_;

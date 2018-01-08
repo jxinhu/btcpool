@@ -12,7 +12,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "version.h"
-
+#include <iostream>
 #include <vector>
 
 typedef uint256 ChainCode;

@@ -702,3 +702,79 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
     return true;
 }
 
+/*
+char** reverseOf2Hex(string& miningNotify){
+  char* pch = strtok(miningNotify.c_str(), ",");
+  char** pNotify = nullptr;
+  int i = 0;
+  while(pch != NULL){
+    // strlen() return without terminator 
+    size_t len = strlen(pch); 
+    char* first = pch;
+    char* last = pch + len+1;
+
+    while((first != last)&&(first != (last-2))) {
+      std::iter_swap(first+1, --last);
+      std::iter_swap(first, --last);
+      first += 2;
+    }
+
+    pch = strtok(NULL, ",");
+    memcpy(pNotify[i], pch, len+1);
+    ++i;
+  }
+}
+*/
+
+/**/
+void reverseStr(std::string& str){
+  auto first = str.begin();
+  auto last = str.end();
+  while((first != last)&&(first != (last-2))) {
+    std::iter_swap(first+1,--last);
+    std::iter_swap(first,--last);
+    first += 2;
+  }
+}
+
+/**/
+void reverseU32(uint32_t& n){
+  uint32_t ret;
+  ret = (n >> 24)|(n <<24);
+  ret |= (n >> 8) & 0x0000ff00;
+  ret |= (n << 8) & 0x00ff0000;
+  n = ret;
+}
+/*
+void reversePrevHash(std::string& str){
+  auto first = str.begin();
+  auto end = str.end();
+  
+  while(first != end) {
+    auto last = first +8;
+    while((first != last)&&(first != last-2)){
+      std::iter_swap(first,last-1);
+      std::iter_swap(first+1,last-2);
+      first += 2;
+      last -= 2;
+    }
+    first += 4;
+  }
+}
+*/
+void reversePrevExtra(std::string& str){
+  auto first = str.begin();
+  auto last = str.end();
+  while((first != last)&&(first != (last-8))) {
+    std::iter_swap(first,last-8);
+    std::iter_swap(first+1,last-7);
+    std::iter_swap(first+2,last-6);
+    std::iter_swap(first+3,last-5);
+    std::iter_swap(first+4,last-4);
+    std::iter_swap(first+5,last-3);
+    std::iter_swap(first+6,last-2);
+    std::iter_swap(first+7,last-1);
+    first += 8;
+    last -= 8;
+  }
+}

@@ -20,7 +20,7 @@
 namespace Utilities {
 namespace JS {
 
-enum class type { Null, Obj, Array, Str, Int, Real, Bool, Undefined };
+enum class type { Null, Obj, Array, Str, Int, Real, Bool,/* ByteArray,*/ Undefined };
 
 class Node{
   public:
@@ -323,6 +323,7 @@ class Node{
     uint8_t uint8() const { return *start_; }
     int16_t int16() const { return strtol(start_,nullptr,10); }
     uint16_t uint16() const { return strtoul(start_,nullptr,10); }
+    uint16_t uint16_hex() const { return strtoul(start_,nullptr,16); }
     int32_t int32() const { return strtol(start_,nullptr,10); }
     uint32_t uint32() const { return strtoul(start_,nullptr,10); }
     uint32_t uint32_hex() const { return strtoul(start_,nullptr,16); }
@@ -330,6 +331,8 @@ class Node{
     uint64_t uint64() const { return strtoull(start_,nullptr,10); }
     uint64_t uint64_hex() const { return strtoull(start_,nullptr,16); }
     float real() const { return strtof(start_,nullptr); }
+    const char* byte_array() const { return start_; }
+    // const char* byte_array() { return start_; }
     std::string str() const { return std::string(start_,end_); }
     bool boolean() const { return (*start_ == 't' ) ? true : false; }
 

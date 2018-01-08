@@ -216,6 +216,7 @@ string StratumJob::serializeToJson() const {
                          ",\"prevHash\":\"%s\",\"prevHashBeStr\":\"%s\""
                          ",\"height\":%d,\"coinbase1\":\"%s\",\"coinbase2\":\"%s\""
                          ",\"merkleBranch\":\"%s\""
+                         ",\"hashMerkleRoot\":\"%s\""
                          ",\"nVersion\":%d,\"nBits\":%u,\"nTime\":%u"
                          ",\"minTime\":%u,\"coinbaseValue\":%lld,\"witnessCommitment\":\"%s\""
                          // namecoin, optional
@@ -227,6 +228,7 @@ string StratumJob::serializeToJson() const {
                          height_, coinbase1_.c_str(), coinbase2_.c_str(),
                          // merkleBranch_ could be empty
                          merkleBranchStr.size() ? merkleBranchStr.c_str() : "",
+                         hashMerkleRoot_.size() ? hashMerkleRoot_.ToString().c_str(): "",
                          nVersion_, nBits_, nTime_,
                          minTime_, coinbaseValue_,
                          witnessCommitment_.size() ? witnessCommitment_.c_str() : "",
@@ -250,6 +252,7 @@ bool StratumJob::unserializeFromJson(const char *s, size_t len) {
       j["coinbase1"].type()    != Utilities::JS::type::Str ||
       j["coinbase2"].type()    != Utilities::JS::type::Str ||
       j["merkleBranch"].type() != Utilities::JS::type::Str ||
+      j["hashMerkleRoot"].type()!= Utilities::JS::type::Str ||
       j["nVersion"].type()     != Utilities::JS::type::Int ||
       j["nBits"].type()        != Utilities::JS::type::Int ||
       j["nTime"].type()        != Utilities::JS::type::Int ||
@@ -271,7 +274,7 @@ bool StratumJob::unserializeFromJson(const char *s, size_t len) {
   nTime_         = j["nTime"].uint32();
   minTime_       = j["minTime"].uint32();
   coinbaseValue_ = j["coinbaseValue"].int64();
-
+  hashMerkleRoot_= uint256S(j["hashMerkleRoot"].str());
   // witnessCommitment, optional
   // default_witness_commitment must be at least 38 bytes
   if (j["default_witness_commitment"].type() == Utilities::JS::type::Str &&
@@ -519,11 +522,22 @@ bool StratumJob::initFromGbt(const char *gbt, const string &poolCoinbaseInfo,
       << " is over than max " << COINBASE_TX_MAX_SIZE;
       return false;
     }
-
+    /* nano need to make hashMerkleRoot for miningNotify */
+    hashMerkleRoot_ = Hash(coinbaseTpl.begin(), coinbaseTpl.end());
+    for (const uint256 & step : merkleBranch_) {
+         hashMerkleRoot_ = Hash(BEGIN(hashMerkleRoot_),
+                                END  (hashMerkleRoot_),
+                                BEGIN(step),
+                                END  (step));
+    }
+    /*
     const int64 extraNonceStart = findExtraNonceStart(coinbaseTpl, placeHolder);
     coinbase1_ = HexStr(&coinbaseTpl[0], &coinbaseTpl[extraNonceStart]);
     coinbase2_ = HexStr(&coinbaseTpl[extraNonceStart + placeHolder.size()],
                         &coinbaseTpl[coinbaseTpl.size()]);
+    */
+    coinbase1_ = HexStr(&coinbaseTpl[0],&coinbaseTpl[coinbaseTpl.size()]);
+    coinbase2_ = "hello!";
   }
   
   return true;

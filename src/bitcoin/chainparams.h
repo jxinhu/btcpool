@@ -52,6 +52,8 @@ public:
     /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
     uint64_t PruneAfterHeight() const { return nPruneAfterHeight; }
+    unsigned int n() const { return nEquihashN; }
+    unsigned int k() const { return nEquihashK; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
     /** In the future use NetworkIDString() for RPC fields */
@@ -64,10 +66,19 @@ protected:
     CChainParams() {}
 
     Consensus::Params consensus;
+
+    //! Raw pub key bytes for the broadcast alert signing key.
     int nDefaultPort;
+    long nMaxTipAge;
     uint64_t nPruneAfterHeight;
+
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string strNetworkID;
+
+// Equihash params
+    unsigned int nEquihashN = 0;
+    unsigned int nEquihashK = 0;
+
     CBlock genesis;
     bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;

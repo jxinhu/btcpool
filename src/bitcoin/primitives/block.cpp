@@ -18,7 +18,7 @@ uint256 CBlockHeader::GetHash() const
 std::string CBlock::ToString() const
 {
     std::stringstream s;
-    s << strprintf("CBlock(hash=%s, ver=0x%08x, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%u)\n",
+/*    s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%u)\n",
         GetHash().ToString(),
         nVersion,
         hashPrevBlock.ToString(),
@@ -29,6 +29,24 @@ std::string CBlock::ToString() const
     {
         s << "  " << vtx[i].ToString() << "\n";
     }
+*/
+    s << strprintf("CBlock(hash=%s, ver=0x%08x, hashPrevBlock=%s, "
+                   "hashMerkleRoot=%s, hashReserved=%s, nTime=%u, nBits=%08x, nNonce=%s, "
+                   "vtx=%u)\n",
+                   GetHash().ToString(), nVersion, hashPrevBlock.ToString(),
+                   hashMerkleRoot.ToString(), hashReserved.ToString(), nTime, nBits, nNonce.ToString(), vtx.size());
+
+/*	s << strprintf("solution = {");
+    for (size_t i = 0; i < nSolution.size(); ++i)
+    {
+		s << strprintf("%02x", nSolution[i]);
+    }
+    s << strprintf("}\n");
+*/
+    for (unsigned int i = 0; i < vtx.size(); i++) {
+        s << "  " << vtx[i].ToString() << "\n";
+    }
+
     return s.str();
 }
 

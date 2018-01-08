@@ -140,10 +140,10 @@ public:
   // shares submitted by this session, for duplicate share check
   struct LocalShare {
     uint64_t exNonce2_;  // extra nonce2 fixed 8 bytes
-    uint32_t nonce_;     // nonce in block header
+    uint256  nonce_;     // nonce in block header
     uint32_t time_;      // nTime in block header
 
-    LocalShare(uint64_t exNonce2, uint32_t nonce, uint32_t time):
+    LocalShare(uint64_t exNonce2, uint256 nonce, uint32_t time):
     exNonce2_(exNonce2), nonce_(nonce), time_(time) {}
 
     LocalShare & operator=(const LocalShare &other) {
@@ -197,6 +197,7 @@ private:
   uint32_t extraNonce1_;   // MUST be unique across all servers
   static const int kExtraNonce2Size_ = 8;  // extraNonce2 size is always 8 bytes
 
+  string extraNonce_;
   uint64_t currDiff_;
   std::deque<LocalJob> localJobs_;
   size_t kMaxNumLocalJobs_;
@@ -238,12 +239,13 @@ private:
   void _handleRequest_SetDifficulty(uint64_t suggestDiff);
   void _handleRequest_AuthorizePassword(const string &password);
 
-  LocalJob *findLocalJob(uint8_t shortJobId);
+  LocalJob *findLocalJob(uint64_t jobId);
 
   void handleExMessage_RegisterWorker     (const string *exMessage);
   void handleExMessage_UnRegisterWorker   (const string *exMessage);
   void handleExMessage_SubmitShare        (const string *exMessage);
   void handleExMessage_SubmitShareWithTime(const string *exMessage);
+  string allocExtraNonce();
 
 public:
   struct bufferevent* bev_;
@@ -271,11 +273,14 @@ public:
                                             const string &clientAgent,
                                             const string &workerName);
   void handleRequest_Submit(const string &idStr,
-                            const uint8_t shortJobId, const uint64_t extraNonce2,
-                            const uint32_t nonce, uint32_t nTime,
+                            const uint64_t jobId,
+                            uint32_t nTime,
+                            const uint256& nonce,
+                            std::vector<unsigned char> &nSolution,
                             bool isAgentSession,
                             DiffController *sessionDiffController);
   uint32_t getSessionId() const;
+  void sendSetTarget(uint256 &target);
 };
 
 
