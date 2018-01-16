@@ -494,7 +494,7 @@ void BlockMaker::consumeSovledShare(rd_kafka_message_t *rkmessage) {
   vector<char> coinbaseTxBin;
 
   {
-    if (rkmessage->len < sizeof(FoundBlock)) {
+    if (rkmessage->len <= sizeof(FoundBlock)) {
       LOG(ERROR) << "invalid SolvedShare length: " << rkmessage->len;
       return;
     }
@@ -508,7 +508,11 @@ void BlockMaker::consumeSovledShare(rd_kafka_message_t *rkmessage) {
            (const uint8_t *)rkmessage->payload + sizeof(FoundBlock),
            coinbaseTxBin.size());
     // copy header
-    memcpy((uint8_t *)&blkHeader, foundBlock.header140_, sizeof(CBlockHeader));
+    memcpy((uint8_t *)&blkHeader, foundBlock.header1484_, 140);
+	blkHeader.nSolution.reserve(1344);
+    for(int i=0; i<1344; ++i){
+		blkHeader.nSolution.push_back((unsigned char)foundBlock.header1484_[140+i]); 
+	}
   }
 
   // get gbtHash and rawgbt (vtxs)

@@ -555,7 +555,7 @@ void StratumJobEx::makeMiningNotifyStr() {
   }
 
   // we don't put jobId here, session will fill with the shortJobId
-  miningNotify1_ = "{\"id\":0,\"method\":\"mining.notify\",\"params\":[\"";
+  miningNotify1_ = "{\"id\":null,\"method\":\"mining.notify\",\"params\":[\"";
 
   miningNotify2_ = Strings::Format("\",\"%s\",\"%s\",\"%s\""
                                    ",[%s]"
@@ -580,31 +580,33 @@ void StratumJobEx::makeMiningNotifyStr() {
   /* string jobIdStr = Strings::Format("%016x",sjob_->jobId_); */
   std::string jobIdStr = std::to_string(sjob_->jobId_);
 
+  std::string tmp_nVersion_ = Strings::Format("%08x", sjob_->nVersion_);
   std::string tmp_hashMerkleRoot_ = sjob_->hashMerkleRoot_.ToString();
   std::string tmp_prevHashBeStr_ = sjob_->prevHashBeStr_;
   uint32_t tmp_nTime_ = sjob_->nTime_;
   uint32_t tmp_nBits_ = sjob_->nBits_;
-  uint32_t tmp_nVersion_ = sjob_->nVersion_;
+  
+  reverseStr(tmp_nVersion_);
   reverseStr(tmp_hashMerkleRoot_);
   reverseStr(tmp_prevHashBeStr_);
-  reversePrevExtra(tmp_prevHashBeStr_);
+  // reversePrevExtra(tmp_prevHashBeStr_);
   reverseU32(tmp_nTime_);
   reverseU32(tmp_nBits_);
-  reverseU32(tmp_nVersion_);
+  /* tmp_nVersion_ = 0x544a0200;*/ /* 0x00024a54  150100*/
 
-  miningNotify2Nano_ = Strings::Format("%s\",\"%08x\",\"%s\",\"%s\",\"%s\""
+  miningNotify2Nano_ = Strings::Format("%s\",\"%s\",\"%s\",\"%s\",\"%s\""
                                         ",\"%08x\",\"%08x\",%s"
                                         "]}\n",
                                         jobIdStr.c_str(),
-                                        tmp_nVersion_,
+                                        tmp_nVersion_.c_str(),
                                         tmp_prevHashBeStr_.c_str(),
                                         tmp_hashMerkleRoot_.c_str(),                                        
                                         sjob_->hashReserved_.ToString().c_str(),
                                         tmp_nTime_,
                                         tmp_nBits_,
-                                        isClean_ ? "ture" : "false");
+                                        isClean_ ? "true" : "false");
  
-  miningNotify2NanoClean_ = Strings::Format("%s\",\"%08x\",\"%s\",\"%s\",\"%s\""
+  miningNotify2NanoClean_ = Strings::Format("%s\",\"%s\",\"%s\",\"%s\",\"%s\""
                                         ",\"%08x\",\"%08x\",true"
                                         "]}\n",
                                         jobIdStr.c_str(),
@@ -1085,7 +1087,10 @@ int Server::checkShare(const Share &share,
     foundBlock.workerId_ = share.workerHashId_;
     foundBlock.userId_   = share.userId_;
     foundBlock.height_   = sjob->height_;
-    memcpy(foundBlock.header140_, (const uint8_t *)&header, sizeof(CBlockHeader));
+    memcpy(foundBlock.header1484_, (const uint8_t *)&header, 140);
+    for(int i=0; i<nSolution.size(); ++i){
+		foundBlock.header1484_[140+i] = nSolution[i];
+    }
     snprintf(foundBlock.workerFullName_, sizeof(foundBlock.workerFullName_),
              "%s", workFullName.c_str());
     // send

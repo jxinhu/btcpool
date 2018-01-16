@@ -347,13 +347,14 @@ void StratumSession::responseError(const string &idStr, int errCode) {
   //
   char buf[1024];
   int len = snprintf(buf, sizeof(buf),
-                     "{\"id\":0,\"result\":null,\"error\":[%d,\"%s\",null]}\n",
+                     "{\"id\":%s,\"result\":null,\"error\":[%d,\"%s\",null]}\n",
+                     idStr.empty() ? "null" : idStr.c_str(),
                      errCode, StratumError::toString(errCode));
   sendData(buf, len);
 }
 
 void StratumSession::responseTrue(const string &idStr) {
-  const string s = "{\"id\":3,\"result\":true,\"error\":null}\n";
+  const string s = "{\"id\":" + idStr + ",\"result\":true,\"error\":null}\n";
   sendData(s);
 }
 
@@ -378,7 +379,7 @@ void StratumSession::handleRequest(const string &idStr, const string &method,
     handleRequest_SuggestDifficulty(idStr, jparams);
   }
   else if (method == "mining.extranonce.subscribe"){
-  //  sendData("{\"id\":3,\"error\":0}");
+    responseError(idStr, StratumError::ILLEGAL_PARARMS); 
   } else {
     // unrecognised method, just ignore it
     LOG(WARNING) << "unrecognised method: \"" << method << "\""
@@ -411,7 +412,7 @@ bool _isNiceHashAgent(const string &clientAgent) {
 void StratumSession::handleRequest_Subscribe(const string &idStr,
                                              const JsonNode &jparams) {
   if (state_ != CONNECTED) {
-    responseError("0", StratumError::UNKNOWN);
+    responseError(idStr, StratumError::UNKNOWN);
     return;
   }
 
@@ -488,8 +489,11 @@ void StratumSession::handleRequest_Subscribe(const string &idStr,
   sendData(s);
   */
    DLOG(INFO) << "send extraNonce_: " << extraNonce_;    
-  const string s = Strings::Format("{ \"id\":1,\"result\":[true,\"%s\"],\"error\":null }\n", extraNonce_.c_str());
+  const string s = Strings::Format("{\"id\":%s,\"result\":[null,\"%s\"]}\n",idStr.c_str(),"00000000000000000000000000000000"); 
   sendData(s);
+  shared_ptr<StratumJobEx> exjob;
+  exjob = server_->jobRepository_->getLatestStratumJobEx();
+  sendSetTarget(exjob->sjob_->networkTarget_);
 
   if (clientAgent_ == "__PoolWatcher__") {
     isLongTimeout_ = true;
@@ -669,7 +673,7 @@ void StratumSession::handleRequest_Submit(const string &idStr,
     responseError(idStr, StratumError::UNAUTHORIZED);
 
     // there must be something wrong, send reconnect command
-    const string s = "{\"id\":0,\"method\":\"client.reconnect\",\"params\":[]}\n";
+    const string s = "{\"id\":null,\"method\":\"client.reconnect\",\"params\":[]}\n";
     sendData(s);
 
     return;
@@ -698,7 +702,7 @@ void StratumSession::handleRequest_Submit(const string &idStr,
   uint256 nonce              = uint256S(jparams.children()->at(4).str());
   */
   /* new to deal with message*/
-  /*  params[0] = minername
+  /*  params[0] = fullname
       params[1] = jobid, should be string
       params[2] = nTime
       params[3] = nonce, minus extraNonce
@@ -706,15 +710,14 @@ void StratumSession::handleRequest_Submit(const string &idStr,
   */
   if (jparams.children()->size() < 5)
   {
-    responseError("0",StratumError::ILLEGAL_PARARMS);
+    responseError(idStr,StratumError::ILLEGAL_PARARMS);
     return;
   }
   const uint64_t jobId = jparams.children()->at(1).uint64();
   uint32_t nTime       = jparams.children()->at(2).uint32_hex();
   reverseU32(nTime); 
   string nonce2Str     = jparams.children()->at(3).str();
-
-  string fullNonceStr  = extraNonce_ + nonce2Str;
+  string fullNonceStr  = "00000000000000000000000000000000"  + nonce2Str;
   // when length<4, deal later...
   assert(fullNonceStr.size() >= 4);
   auto first = fullNonceStr.begin();
@@ -776,7 +779,7 @@ void StratumSession::handleRequest_Submit(const string &idStr,
   exjob = server_->jobRepository_->getStratumJobEx(jobId);
   /*
   Share share;
-  share.jobId_        = localJob->jobId_;
+  share.jobId_        = jobId;
   share.workerHashId_ = worker_.workerHashId_;
   share.ip_           = clientIpInt_;
   share.userId_       = worker_.userId_;
@@ -816,8 +819,9 @@ void StratumSession::handleRequest_Submit(const string &idStr,
   */
   // calc jobTarget
   uint256 jobTarget;
-  DiffToTarget(share.share_, jobTarget);
+  DiffToTarget(share.share_, jobTarget, false);
 
+  BitsToTarget(localJob->blkBits_,jobTarget);
   // we send share to kafka by default, but if there are lots of invalid
   // shares in a short time, we just drop them.
   bool isSendShareToKafka = true;
@@ -919,14 +923,14 @@ StratumSession::LocalJob *StratumSession::findLocalJob(uint64_t jobId) {
 }
 
 void StratumSession::sendSetDifficulty(const uint64_t difficulty) {
-  string s = Strings::Format("{\"id\":0,\"method\":\"mining.set_difficulty\""
+  string s = Strings::Format("{\"id\":null,\"method\":\"mining.set_difficulty\""
                              ",\"params\":[%" PRIu64"]}\n",
                              difficulty);
 //  sendData(s);
 }
 void StratumSession::sendSetTarget(uint256 &target)
 {
-  const string s = Strings::Format("{\"id\":0,\"method\":\"mining.set_target\",\"params\":[\"%s\"],\"error\":0}\n",
+  const string s = Strings::Format("{\"id\":null,\"method\":\"mining.set_target\",\"params\":[\"%s\"]}\n",
 							/*	"1fffe00000000000000000000000000000000000000000000000000000000000"); */		
   								 target.ToString().c_str());
   sendData(s);
@@ -951,7 +955,6 @@ void StratumSession::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr,
     return;
   }
   
-  DLOG(INFO) << "931/extraNonce_: " << extraNonce_;    
   
   StratumJob *sjob = exJobPtr->sjob_;
 
@@ -961,6 +964,7 @@ void StratumSession::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr,
   ljob.jobId_         = sjob->jobId_;
   ljob.shortJobId_    = allocShortJobId();
   ljob.jobDifficulty_ = diffController_.calcCurDiff();
+  ljob.jobDifficulty_ = TargetToDiff(sjob->networkTarget_);
 
   if (agentSessions_ != nullptr)
   {
@@ -975,8 +979,8 @@ void StratumSession::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr,
   }
 
   uint256 jobTarget;
-  DiffToTarget(ljob.jobDifficulty_,jobTarget);
-  // set difficulty
+  DiffToTarget(ljob.jobDifficulty_, jobTarget, false);
+  // set target
   if (currDiff_ != ljob.jobDifficulty_) {
     /* sendSetDifficulty(ljob.jobDifficulty_); */
     sendSetTarget(jobTarget);

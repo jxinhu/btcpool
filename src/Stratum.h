@@ -83,11 +83,11 @@ public:
   int64_t  workerId_;  // found by who
   int32_t  userId_;
   int32_t  height_;
-  uint8_t  header140_[140];
+  uint8_t  header1484_[1484];
   char     workerFullName_[40];  // <UserName>.<WorkerName>
 
   FoundBlock(): jobId_(0), workerId_(0), userId_(0), height_(0) {
-    memset(header140_,       0, sizeof(header140_));
+    memset(header1484_,       0, sizeof(header1484_)); 
     memset(workerFullName_, 0, sizeof(workerFullName_));
   }
 };
